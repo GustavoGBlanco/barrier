@@ -2,141 +2,108 @@
 using System;
 using System.Threading;
 
-public static class SincronizacionBasica
+public static class BarrierExamples
 {
-    private static Barrier _barrier = new(2);
-
-    public static void Ejecutar(string nombre)
-    {
-        Console.WriteLine($"{nombre} llegó al punto de sincronización");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"{nombre} continuando luego de la barrera");
-    }
-}
-
-public static class FaseInicial
-{
-    private static Barrier _barrier = new(3);
-
-    public static void Fase(string nombre)
-    {
-        Console.WriteLine($"{nombre} completó su parte de la fase inicial");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"{nombre} comienza la siguiente fase");
-    }
-}
-
-public static class FaseConNotificacion
-{
-    private static Barrier _barrier = new(2, b => Console.WriteLine($"=> Todos completaron la fase {b.CurrentPhaseNumber}"));
-
-    public static void Ejecutar(string nombre)
-    {
-        Console.WriteLine($"{nombre} ejecutando fase {_barrier.CurrentPhaseNumber}");
-        _barrier.SignalAndWait();
-    }
-}
-
-public static class SimulacionCarrera
-{
-    private static Barrier _barrier = new(3);
-
-    public static void Corredor(string nombre)
-    {
-        Console.WriteLine($"{nombre} listo");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"{nombre} corriendo...");
-        Thread.Sleep(new Random().Next(500, 1000));
-        Console.WriteLine($"{nombre} llegó a la meta");
-    }
-}
-
-public static class DosFases
-{
-    private static Barrier _barrier = new(2);
-
-    public static void Ejecutar(string nombre)
-    {
-        Console.WriteLine($"{nombre} fase 1");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"{nombre} fase 2");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"{nombre} terminado");
-    }
-}
-
-public static class CoordinacionSensores
-{
-    private static Barrier _barrier = new(4);
-
-    public static void Sensor(string id)
-    {
-        Console.WriteLine($"Sensor {id} calibrando...");
-        Thread.Sleep(500);
-        Console.WriteLine($"Sensor {id} listo");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"Sensor {id} enviando datos...");
-    }
-}
-
-public static class JuegoPorTurnos
-{
-    private static Barrier _barrier = new(3);
-
-    public static void Jugador(string nombre)
-    {
-        for (int i = 1; i <= 3; i++)
-        {
-            Console.WriteLine($"{nombre} juega turno {i}");
-            _barrier.SignalAndWait();
-        }
-    }
-}
-
-public static class EliminacionDeHilo
-{
-    private static Barrier _barrier = new(3);
+    private static Barrier _barrera = new(3);
+    private static Barrier _inicioSincronizado = new(3);
+    private static Barrier _coordinador = new(3);
+    private static Barrier _barreraReutilizable = new(3);
+    private static Barrier _barreraConAccion = new(3, b => Console.WriteLine($"--- Todos completaron la fase {b.CurrentPhaseNumber} ---"));
+    private static Barrier _pipeline = new(3);
+    private static Barrier _modulos = new(4);
+    private static Barrier _simulacion = new(3);
+    private static Barrier _ensamblado = new(3);
+    private static Barrier _finalizacion = new(3, b => Console.WriteLine($"✅ Todos completaron la fase crítica {b.CurrentPhaseNumber}"));
 
     public static void Tarea(string nombre)
     {
-        Console.WriteLine($"{nombre} ejecuta fase 1");
-        _barrier.SignalAndWait();
-
-        if (nombre == "Hilo3")
-        {
-            Console.WriteLine($"{nombre} se retira después de la fase 1");
-            _barrier.RemoveParticipant();
-            return;
-        }
-
-        Console.WriteLine($"{nombre} ejecuta fase 2");
-        _barrier.SignalAndWait();
+        Console.WriteLine($"{nombre} fase 1 completada");
+        _barrera.SignalAndWait();
+        Console.WriteLine($"{nombre} fase 2 iniciada");
     }
-}
 
-public static class ProcesamientoFases
-{
-    private static Barrier _barrier = new(3);
+    public static void Inicializar(string modulo)
+    {
+        Console.WriteLine($"{modulo} inicializando...");
+        Thread.Sleep(200);
+        _inicioSincronizado.SignalAndWait();
+        Console.WriteLine($"{modulo} comienza su tarea principal.");
+    }
 
-    public static void Proceso(string nombre)
+    public static void Procesar(string hilo)
+    {
+        Console.WriteLine($"{hilo} procesando parte 1...");
+        Thread.Sleep(300);
+        _coordinador.SignalAndWait();
+        Console.WriteLine($"{hilo} procesando parte 2...");
+    }
+
+    public static void EjecutarConFases(string hilo)
     {
         for (int i = 0; i < 2; i++)
         {
-            Console.WriteLine($"{nombre} procesando lote {i}");
-            Thread.Sleep(500);
-            _barrier.SignalAndWait();
+            Console.WriteLine($"{hilo} completó fase {i + 1}");
+            _barreraReutilizable.SignalAndWait();
         }
     }
-}
 
-public static class ReinicioCoordinado
-{
-    private static Barrier _barrier = new(2);
-
-    public static void Modulo(string nombre)
+    public static void FaseTrabajo(string nombre)
     {
-        Console.WriteLine($"{nombre} listo para reiniciar");
-        _barrier.SignalAndWait();
-        Console.WriteLine($"{nombre} reiniciando...");
+        Console.WriteLine($"{nombre} trabajando en fase {_barreraConAccion.CurrentPhaseNumber}");
+        Thread.Sleep(200);
+        _barreraConAccion.SignalAndWait();
+    }
+
+    public static void EtapaPipeline(string nombre)
+    {
+        Console.WriteLine($"{nombre} ejecutando ETAPA 1");
+        Thread.Sleep(300);
+        _pipeline.SignalAndWait();
+
+        Console.WriteLine($"{nombre} ejecutando ETAPA 2");
+        Thread.Sleep(200);
+        _pipeline.SignalAndWait();
+
+        Console.WriteLine($"{nombre} ejecutando ETAPA 3");
+        Thread.Sleep(100);
+        _pipeline.SignalAndWait();
+    }
+
+    public static void CalculoModulo(string nombre)
+    {
+        Console.WriteLine($"{nombre} calculando parte A...");
+        Thread.Sleep(200);
+        _modulos.SignalAndWait();
+
+        Console.WriteLine($"{nombre} calculando parte B...");
+        Thread.Sleep(200);
+        _modulos.SignalAndWait();
+    }
+
+    public static void EjecutarSimulacion(string nombre)
+    {
+        for (int fase = 1; fase <= 3; fase++)
+        {
+            Console.WriteLine($"{nombre} ejecutando fase {fase}");
+            Thread.Sleep(100 * fase);
+            _simulacion.SignalAndWait();
+        }
+    }
+
+    public static void FaseEnsamblado(string componente)
+    {
+        for (int i = 1; i <= 2; i++)
+        {
+            Console.WriteLine($"{componente} completó paso {i}");
+            Thread.Sleep(150);
+            _ensamblado.SignalAndWait();
+        }
+    }
+
+    public static void TareaCritica(string nombre)
+    {
+        Console.WriteLine($"{nombre} ejecutando tarea crítica.");
+        Thread.Sleep(250);
+        _finalizacion.SignalAndWait();
     }
 }
