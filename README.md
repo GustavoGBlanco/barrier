@@ -1,4 +1,4 @@
-# Módulo 6: `Barrier` en C#
+# Módulo 7: `Barrier` en C#
 
 ## 🛠️ ¿Qué es `Barrier`?
 `Barrier` es un mecanismo de sincronización que permite a **múltiples hilos esperar unos por otros en etapas** (fases), antes de continuar con la siguiente.
@@ -102,5 +102,3 @@ class Program
 | ✅ Usá `postPhaseAction` para logging o validaciones globales | Mejora trazabilidad |
 
 ---
-
-✅ Este fue el Módulo 6. Con esto completamos los mecanismos clave de sincronización en C#.
